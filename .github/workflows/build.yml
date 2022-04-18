@@ -11,7 +11,7 @@ jobs:
       # Cleanup The Actions Workspace Using Custom Composite Run Actions
       - uses: rokibhasansagar/slimhub_actions@main
 
-      - run: sudo apt-get install repo
+      - run: sudo apt-get update && sudo apt-get install repo
 
       - run: git config --global --unset credential.helper
 
