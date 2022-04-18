@@ -1,0 +1,20 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # You can use either of the ubuntu-18.04 or ubuntu-20.04 runner
+    steps:
+      # Cleanup The Actions Workspace Using Custom Composite Run Actions
+      - uses: rokibhasansagar/slimhub_actions@main
+
+      - run: sudo apt-get install repo
+
+      - run: git config --global --unset credential.helper
+
+      - run: repo init --depth=1 --no-repo-verify -u https://android.googlesource.com/platform/manifest -b master -g default,-mips,-darwin,-notdefault
+
+      - run: repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
