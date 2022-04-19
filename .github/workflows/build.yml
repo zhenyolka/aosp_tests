@@ -40,7 +40,7 @@ jobs:
           repo sync -j4
           echo "::endgroup::"
 
-      - name Build
+      - name: Build
         run: |
           cd aosp
           source build/envsetup.sh
