@@ -5,32 +5,51 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     # You can use either of the ubuntu-18.04 or ubuntu-20.04 runner
     steps:
       # Cleanup The Actions Workspace Using Custom Composite Run Actions
       - uses: rokibhasansagar/slimhub_actions@main
 
-      - run: sudo apt-get update && sudo apt-get -y install git nano build-essential flex bison zip unzip curl screen gnupg zlib1g-dev libncurses5 x11proto-core-dev libx11-dev libgl1-mesa-dev gperf libc6-dev libxml2-utils xsltproc fontconfig openjdk-17-jdk libncurses6 procps gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev lib32z1-dev ccache gnupg rsync lib32z1-dev python3 && sudo ln -sf /usr/bin/python3 /usr/bin/python
+      - name: Initializing environment
+        run: |
+          echo "::group::Install Build Env Tool"
+          sudo -E apt-get clean
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install curl libstdc++6 git wget repo rsync aria2
+          echo "::endgroup::"
+          git config --global user.name "Your Name"
+          git config --global user.email "you@example.com"
+          git clone https://gitlab.com/OrangeFox/misc/scripts.git --depth=1 --single-branch
+          cd scripts
+          echo "::group::Setup Build Env"
+          sudo -E bash setup/android_build_env.sh
+          echo "::endgroup::"
+          echo "::group::Install Android Sdk"
+          sudo -E bash setup/install_android_sdk.sh
+          echo "::endgroup::"
 
-      - run: |
-            export REPO=/bin/repo
-            sudo curl -o ${REPO} https://storage.googleapis.com/git-repo-downloads/repo && sudo chmod a+x ${REPO}
+      - name: Sync recovery source
+        run: |
+          mkdir aosp
+          cd aosp
+          echo "::group::Repo Init"
+          repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-12.1 --depth=1 --groups=all,-notdefault,-device,-darwin,-x86,-mips
+          echo "::endgroup::"
+          echo "::group::Repo Sync"
+          repo sync -j4
+          echo "::endgroup::"
 
-      - run: git config --global user.name "Your Name" && git config --global user.email "you@example.com"
+      - name Build
+        run: |
+          cd aosp
+          source build/envsetup.sh
+          lunch aosp_arm64-eng
+          cd external
+          git clone https://github.com/maruos/mflinger
+          cd mflinger
+          mm
 
-      - run: repo init --depth=1 --no-repo-verify -u https://android.googlesource.com/platform/manifest -b master -g default,-mips,-darwin,-notdefault
+      - run: curl --upload-file aosp/out/target/product/*/system/bin/mflinger https://transfer.sh/mflinger
 
-      - run: repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
-
-      - run: |
-            source build/envsetup.sh
-            lunch aosp_arm64-eng
-            cd external
-            git clone https://github.com/maruos/mflinger
-            cd mflinger
-            mm
-
-      - run: curl --upload-file out/target/product/*/system/bin/mflinger https://transfer.sh/mflinger
-
-      - run: curl --upload-file out/target/product/*/system/lib*/libmflinger.so https://transfer.sh/libmflinger.so
+      - run: curl --upload-file aosp/out/target/product/*/system/lib*/libmflinger.so https://transfer.sh/libmflinger.so
