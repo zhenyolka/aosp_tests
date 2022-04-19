@@ -34,7 +34,7 @@ jobs:
           mkdir aosp
           cd aosp
           echo "::group::Repo Init"
-          repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-12.1 --depth=1 --groups=all,-notdefault,-device,-darwin,-x86,-mips
+          repo init -u https://github.com/zhenyolka/platform_manifest_twrp_aosp -b twrp-12.1 --depth=1 --groups=all,-notdefault,-device,-darwin,-x86,-mips
           echo "::endgroup::"
           echo "::group::Repo Sync"
           repo sync -j4
@@ -43,6 +43,7 @@ jobs:
       - name: Build
         run: |
           cd aosp
+          export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch aosp_arm64-eng
           cd external
